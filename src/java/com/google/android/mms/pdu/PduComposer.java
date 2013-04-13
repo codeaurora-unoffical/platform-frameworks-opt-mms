@@ -1074,7 +1074,7 @@ public class PduComposer {
                 arraycopy(partData, 0, partData.length);
                 dataLength = partData.length;
             } else {
-                InputStream cr;
+                InputStream cr = null;
                 try {
                     byte[] buffer = new byte[PDU_COMPOSER_BLOCK_SIZE];
                     cr = mResolver.openInputStream(part.getDataUri());
@@ -1090,7 +1090,16 @@ public class PduComposer {
                     return PDU_COMPOSE_CONTENT_ERROR;
                 } catch (RuntimeException e) {
                     return PDU_COMPOSE_CONTENT_ERROR;
-                }
+                } finally {
+                    /*cr will be closed if no use more*/
+                    if (null != cr) {
+                        try {
+                            cr.close();
+                        } catch (IOException e) {
+                            return PDU_COMPOSE_CONTENT_ERROR;
+                        }
+                    }
+                }       
             }
 
             if (dataLength != (attachment.getLength() - headerLength)) {
@@ -1215,12 +1224,11 @@ public class PduComposer {
                         /* at lease one of name, filename, Content-location
                          * should be available.
                          */
-			//moushanli add 11.08.18 just for backupMMS 						
-                        if(backFlag){
-                        	name = "smil.xml".getBytes();
-                        } else{
-							return PDU_COMPOSE_CONTENT_ERROR;
-                        }
+                         if(backFlag){
+                         name = "smil.xml".getBytes();
+                         } else{
+                             return PDU_COMPOSE_CONTENT_ERROR;
+                         }
                     }
                 }
             }
@@ -1268,7 +1276,7 @@ public class PduComposer {
                 arraycopy(partData, 0, partData.length);
                 dataLength = partData.length;
             } else {
-                InputStream cr;
+                InputStream cr = null;
                 try {
                     byte[] buffer = new byte[PDU_COMPOSER_BLOCK_SIZE];
                     cr = mResolver.openInputStream(part.getDataUri());
@@ -1284,7 +1292,16 @@ public class PduComposer {
                     return PDU_COMPOSE_CONTENT_ERROR;
                 } catch (RuntimeException e) {
                     return PDU_COMPOSE_CONTENT_ERROR;
-                }
+                }finally {
+                    /*cr will be closed if no use more*/
+                    if (null != cr) {
+                        try {
+                            cr.close();
+                        } catch (IOException e) {
+                            return PDU_COMPOSE_CONTENT_ERROR;
+                        }
+                    }
+                }   
             }
 
             if (dataLength != (attachment.getLength() - headerLength)) {
