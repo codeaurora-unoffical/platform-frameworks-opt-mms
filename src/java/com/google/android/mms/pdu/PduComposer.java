@@ -148,6 +148,7 @@ public class PduComposer {
      * @return OutputStream of maked message. Return null if
      *         the PDU is invalid.
      */
+    public boolean backFlag = true;
     public byte[] make() {
         // Get Message-type.
         int type = mPdu.getMessageType();
@@ -171,6 +172,11 @@ public class PduComposer {
                 break;
             case PduHeaders.MESSAGE_TYPE_READ_REC_IND:
                 if (makeReadRecInd() != PDU_COMPOSE_SUCCESS) {
+                    return null;
+                }
+                break;
+            case PduHeaders.MESSAGE_TYPE_RETRIEVE_CONF:
+                if (makeRetrievePdu() != PDU_COMPOSE_SUCCESS) {
                     return null;
                 }
                 break;
@@ -838,6 +844,89 @@ public class PduComposer {
         return makeMessageBody();
     }
 
+    private int makeRetrievePdu() {
+        if (mMessage == null) {
+            mMessage = new ByteArrayOutputStream();
+            mPosition = 0;
+        }
+
+        // X-Mms-Message-Type
+        appendOctet(PduHeaders.MESSAGE_TYPE);
+        appendOctet(PduHeaders.MESSAGE_TYPE_RETRIEVE_CONF);
+
+        // X-Mms-Transaction-ID
+        appendOctet(PduHeaders.TRANSACTION_ID);
+
+        byte[] trid = mPduHeader.getTextString(PduHeaders.TRANSACTION_ID);
+        if (trid == null) {
+            // Transaction-ID should be set(by Transaction) before make().
+            throw new IllegalArgumentException("Transaction-ID is null.");
+        }
+        appendTextString(trid);
+
+        //  X-Mms-MMS-Version
+        if (appendHeader(PduHeaders.MMS_VERSION) != PDU_COMPOSE_SUCCESS) {
+            return PDU_COMPOSE_CONTENT_ERROR;
+        }
+
+        // Date Date-value Optional.
+        appendHeader(PduHeaders.DATE);
+
+        // From
+        if (appendHeader(PduHeaders.FROM) != PDU_COMPOSE_SUCCESS) {
+            return PDU_COMPOSE_CONTENT_ERROR;
+        }
+
+        boolean recipient = false;
+
+        // To
+        if (appendHeader(PduHeaders.TO) != PDU_COMPOSE_CONTENT_ERROR) {
+            recipient = true;
+        }
+
+        // Cc
+        if (appendHeader(PduHeaders.CC) != PDU_COMPOSE_CONTENT_ERROR) {
+            recipient = true;
+        }
+
+        // Bcc
+        if (appendHeader(PduHeaders.BCC) != PDU_COMPOSE_CONTENT_ERROR) {
+            recipient = true;
+        }
+
+        // Need at least one of "cc", "bcc" and "to".
+        if (false == recipient) {
+            return PDU_COMPOSE_CONTENT_ERROR;
+        }
+
+        // Subject Optional
+        appendHeader(PduHeaders.SUBJECT);
+
+        // X-Mms-Message-Class Optional
+        // Message-class-value = Class-identifier | Token-text
+        appendHeader(PduHeaders.MESSAGE_CLASS);
+
+        // X-Mms-Expiry Optional
+        appendHeader(PduHeaders.EXPIRY);
+
+        // X-Mms-Priority Optional
+        appendHeader(PduHeaders.PRIORITY);
+
+        // X-Mms-Delivery-Report Optional
+        appendHeader(PduHeaders.DELIVERY_REPORT);
+
+        // X-Mms-Read-Report Optional
+        appendHeader(PduHeaders.READ_REPORT);
+
+        //    Content-Type
+        appendOctet(PduHeaders.CONTENT_TYPE);
+
+        //  Message body
+        makeRetrieveMessageBody();
+
+        return PDU_COMPOSE_SUCCESS;  // Composing the message is OK
+    }
+
     /**
      * Make message body.
      */
@@ -985,7 +1074,7 @@ public class PduComposer {
                 arraycopy(partData, 0, partData.length);
                 dataLength = partData.length;
             } else {
-                InputStream cr;
+                InputStream cr = null;
                 try {
                     byte[] buffer = new byte[PDU_COMPOSER_BLOCK_SIZE];
                     cr = mResolver.openInputStream(part.getDataUri());
@@ -1001,7 +1090,16 @@ public class PduComposer {
                     return PDU_COMPOSE_CONTENT_ERROR;
                 } catch (RuntimeException e) {
                     return PDU_COMPOSE_CONTENT_ERROR;
-                }
+                } finally {
+                    /*cr will be closed if no use more*/
+                    if (null != cr) {
+                        try {
+                            cr.close();
+                        } catch (IOException e) {
+                            return PDU_COMPOSE_CONTENT_ERROR;
+                        }
+                    }
+                }       
             }
 
             if (dataLength != (attachment.getLength() - headerLength)) {
@@ -1017,6 +1115,208 @@ public class PduComposer {
         return PDU_COMPOSE_SUCCESS;
     }
 
+    private int makeRetrieveMessageBody() {
+        // 1. add body informations
+        mStack.newbuf();  // Switching buffer because we need to
+
+        PositionMarker ctStart = mStack.mark();
+
+        // This contentTypeIdentifier should be used for type of attachment...
+        String contentType = new String(mPduHeader.getTextString(PduHeaders.CONTENT_TYPE));
+        Integer contentTypeIdentifier = mContentTypeMap.get(contentType);
+        if (contentTypeIdentifier == null) {
+            // content type is mandatory
+            return PDU_COMPOSE_CONTENT_ERROR;
+        }
+
+        appendShortInteger(contentTypeIdentifier.intValue());
+
+        // content-type parameter: start
+        PduBody body = ((RetrieveConf) mPdu).getBody();
+        if (null == body || body.getPartsNum() == 0) {
+            // empty message
+            appendUintvarInteger(0);
+            mStack.pop();
+            mStack.copy();
+            return PDU_COMPOSE_SUCCESS;
+        }
+
+        PduPart part;
+        try {
+            part = body.getPart(0);
+
+            String type = new String(part.getContentType());
+            if ( false == type.equals("text/x-vCard") 
+                && false == type.equals("text/x-vCalendar")
+                && false == type.equals("application/oct-stream")
+                && false == type.equals("application/octet-stream")){
+            byte[] start = part.getContentId();
+            if (start != null) {
+                appendOctet(PduPart.P_DEP_START);
+                if (('<' == start[0]) && ('>' == start[start.length - 1])) {
+                    appendTextString(start);
+                } else {
+                    appendTextString("<" + new String(start) + ">");
+                }
+            }
+
+            // content-type parameter: type
+            appendOctet(PduPart.P_CT_MR_TYPE);
+            appendTextString(part.getContentType());
+                int ctLength = ctStart.getLength();
+                mStack.pop();
+                appendValueLength(ctLength);
+                mStack.copy();
+            }else{
+                mStack.pop();
+                mStack.copy();
+            }
+        }
+        catch (ArrayIndexOutOfBoundsException e){
+            e.printStackTrace();
+        }
+
+        /*int ctLength = ctStart.getLength();
+        mStack.pop();
+        appendValueLength(ctLength);
+        mStack.copy();*/
+
+        // 3. add content
+        int partNum = body.getPartsNum();
+        appendUintvarInteger(partNum);
+        for (int i = 0; i < partNum; i++) {
+            part = body.getPart(i);
+            mStack.newbuf();  // Leaving space for header lengh and data length
+            PositionMarker attachment = mStack.mark();
+
+            mStack.newbuf();  // Leaving space for Content-Type length
+            PositionMarker contentTypeBegin = mStack.mark();
+
+            byte[] partContentType = part.getContentType();
+
+            if (partContentType == null) {
+                // content type is mandatory
+                return PDU_COMPOSE_CONTENT_ERROR;
+            }
+
+            // content-type value
+            Integer partContentTypeIdentifier =
+                mContentTypeMap.get(new String(partContentType));
+            if (partContentTypeIdentifier == null) {
+                appendTextString(partContentType);
+            } else {
+                appendShortInteger(partContentTypeIdentifier.intValue());
+            }
+
+            /* Content-type parameter : name.
+             * The value of name, filename, content-location is the same.
+             * Just one of them is enough for this PDU.
+             */
+            byte[] name = part.getName();
+
+            if (null == name) {
+                name = part.getFilename();
+
+                if (null == name) {
+                    name = part.getContentLocation();
+
+                    if (null == name) {
+                        /* at lease one of name, filename, Content-location
+                         * should be available.
+                         */
+                         if(backFlag){
+                         name = "smil.xml".getBytes();
+                         } else{
+                             return PDU_COMPOSE_CONTENT_ERROR;
+                         }
+                    }
+                }
+            }
+            appendOctet(PduPart.P_DEP_NAME);
+            appendTextString(name);
+
+            // content-type parameter : charset
+            int charset = part.getCharset();
+            if (charset != 0) {
+                appendOctet(PduPart.P_CHARSET);
+                appendShortInteger(charset);
+            }
+
+            int contentTypeLength = contentTypeBegin.getLength();
+            mStack.pop();
+            appendValueLength(contentTypeLength);
+            mStack.copy();
+
+            // content id
+            byte[] contentId = part.getContentId();
+
+            if (null != contentId) {
+                appendOctet(PduPart.P_CONTENT_ID);
+                if (('<' == contentId[0]) && ('>' == contentId[contentId.length - 1])) {
+                    appendQuotedString(contentId);
+                } else {
+                    appendQuotedString("<" + new String(contentId) + ">");
+                }
+            }
+
+            // content-location
+            byte[] contentLocation = part.getContentLocation();
+            if (null != contentLocation) {
+            	appendOctet(PduPart.P_CONTENT_LOCATION);
+            	appendTextString(contentLocation);
+            }
+
+            // content
+            int headerLength = attachment.getLength();
+
+            int dataLength = 0; // Just for safety...
+            byte[] partData = part.getData();
+
+            if (partData != null) {
+                arraycopy(partData, 0, partData.length);
+                dataLength = partData.length;
+            } else {
+                InputStream cr = null;
+                try {
+                    byte[] buffer = new byte[PDU_COMPOSER_BLOCK_SIZE];
+                    cr = mResolver.openInputStream(part.getDataUri());
+                    int len = 0;
+                    while ((len = cr.read(buffer)) != -1) {
+                        mMessage.write(buffer, 0, len);
+                        mPosition += len;
+                        dataLength += len;
+                    }
+                } catch (FileNotFoundException e) {
+                    return PDU_COMPOSE_CONTENT_ERROR;
+                } catch (IOException e) {
+                    return PDU_COMPOSE_CONTENT_ERROR;
+                } catch (RuntimeException e) {
+                    return PDU_COMPOSE_CONTENT_ERROR;
+                }finally {
+                    /*cr will be closed if no use more*/
+                    if (null != cr) {
+                        try {
+                            cr.close();
+                        } catch (IOException e) {
+                            return PDU_COMPOSE_CONTENT_ERROR;
+                        }
+                    }
+                }   
+            }
+
+            if (dataLength != (attachment.getLength() - headerLength)) {
+                throw new RuntimeException("BUG: Length sanity check failed");
+            }
+
+            mStack.pop();
+            appendUintvarInteger(headerLength);
+            appendUintvarInteger(dataLength);
+            mStack.copy();
+        }
+
+        return PDU_COMPOSE_SUCCESS;
+    }
+	
     /**
      *  Record current message informations.
      */
