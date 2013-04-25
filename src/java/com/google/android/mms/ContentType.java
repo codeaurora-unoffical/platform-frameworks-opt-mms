@@ -32,6 +32,7 @@ public class ContentType {
     public static final String TEXT_HTML         = "text/html";
     public static final String TEXT_VCALENDAR    = "text/x-vCalendar";
     public static final String TEXT_VCARD        = "text/x-vCard";
+	public static final String OCT_STREAM        = "application/octet-stream";
 
     public static final String IMAGE_UNSPECIFIED = "image/*";
     public static final String IMAGE_JPEG        = "image/jpeg";
@@ -40,6 +41,7 @@ public class ContentType {
     public static final String IMAGE_WBMP        = "image/vnd.wap.wbmp";
     public static final String IMAGE_PNG         = "image/png";
     public static final String IMAGE_X_MS_BMP    = "image/x-ms-bmp";
+    public static final String IMAGE_BMP        = "image/bmp";
 
     public static final String AUDIO_UNSPECIFIED = "audio/*";
     public static final String AUDIO_AAC         = "audio/aac";
@@ -52,6 +54,7 @@ public class ContentType {
     public static final String AUDIO_MPEG        = "audio/mpeg";
     public static final String AUDIO_MPG         = "audio/mpg";
     public static final String AUDIO_MP4         = "audio/mp4";
+    public static final String AUDIO_WAV         = "audio/wav";
     public static final String AUDIO_X_MID       = "audio/x-mid";
     public static final String AUDIO_X_MIDI      = "audio/x-midi";
     public static final String AUDIO_X_MP3       = "audio/x-mp3";
@@ -113,6 +116,7 @@ public class ContentType {
         sSupportedContentTypes.add(AUDIO_X_WAV);
         sSupportedContentTypes.add(AUDIO_3GPP);
         sSupportedContentTypes.add(AUDIO_OGG);
+        sSupportedContentTypes.add(AUDIO_WAV);
 
         sSupportedContentTypes.add(VIDEO_3GPP);
         sSupportedContentTypes.add(VIDEO_3G2);
@@ -132,6 +136,7 @@ public class ContentType {
         sSupportedImageTypes.add(IMAGE_WBMP);
         sSupportedImageTypes.add(IMAGE_PNG);
         sSupportedImageTypes.add(IMAGE_JPG);
+        sSupportedImageTypes.add(IMAGE_BMP);
         sSupportedImageTypes.add(IMAGE_X_MS_BMP);
 
         // add supported audio types
@@ -145,6 +150,7 @@ public class ContentType {
         sSupportedAudioTypes.add(AUDIO_MPEG);
         sSupportedAudioTypes.add(AUDIO_MPG);
         sSupportedAudioTypes.add(AUDIO_MP4);
+        sSupportedAudioTypes.add(AUDIO_WAV);
         sSupportedAudioTypes.add(AUDIO_X_MID);
         sSupportedAudioTypes.add(AUDIO_X_MIDI);
         sSupportedAudioTypes.add(AUDIO_X_MP3);
