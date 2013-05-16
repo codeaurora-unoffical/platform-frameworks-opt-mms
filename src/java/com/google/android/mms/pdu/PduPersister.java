@@ -125,7 +125,7 @@ public class PduPersister {
         Mms.REPORT_ALLOWED,
         Mms.RETRIEVE_STATUS,
         Mms.STATUS,
-        Mms.DATE_SENT, /* DATE->DATE_SENT */
+        Mms.DATE,
         Mms.DELIVERY_TIME,
         Mms.EXPIRY,
         Mms.MESSAGE_SIZE,
@@ -154,7 +154,7 @@ public class PduPersister {
     private static final int PDU_COLUMN_REPORT_ALLOWED        = 18;
     private static final int PDU_COLUMN_RETRIEVE_STATUS       = 19;
     private static final int PDU_COLUMN_STATUS                = 20;
-    private static final int PDU_COLUMN_DATE_SENT                  = 21;  /* DATE->DATE_SENT */
+    private static final int PDU_COLUMN_DATE                  = 21;
     private static final int PDU_COLUMN_DELIVERY_TIME         = 22;
     private static final int PDU_COLUMN_EXPIRY                = 23;
     private static final int PDU_COLUMN_MESSAGE_SIZE          = 24;
@@ -264,13 +264,13 @@ public class PduPersister {
 
         // Long field code -> column index/name map.
         LONG_COLUMN_INDEX_MAP = new HashMap<Integer, Integer>();
-        LONG_COLUMN_INDEX_MAP.put(PduHeaders.DATE, PDU_COLUMN_DATE_SENT); /* DATE->DATE_SENT */
+        LONG_COLUMN_INDEX_MAP.put(PduHeaders.DATE, PDU_COLUMN_DATE);
         LONG_COLUMN_INDEX_MAP.put(PduHeaders.DELIVERY_TIME, PDU_COLUMN_DELIVERY_TIME);
         LONG_COLUMN_INDEX_MAP.put(PduHeaders.EXPIRY, PDU_COLUMN_EXPIRY);
         LONG_COLUMN_INDEX_MAP.put(PduHeaders.MESSAGE_SIZE, PDU_COLUMN_MESSAGE_SIZE);
 
         LONG_COLUMN_NAME_MAP = new HashMap<Integer, String>();
-        LONG_COLUMN_NAME_MAP.put(PduHeaders.DATE, Mms.DATE_SENT);/* -DATE->DATE_SENT */
+        LONG_COLUMN_NAME_MAP.put(PduHeaders.DATE, Mms.DATE);
         LONG_COLUMN_NAME_MAP.put(PduHeaders.DELIVERY_TIME, Mms.DELIVERY_TIME);
         LONG_COLUMN_NAME_MAP.put(PduHeaders.EXPIRY, Mms.EXPIRY);
         LONG_COLUMN_NAME_MAP.put(PduHeaders.MESSAGE_SIZE, Mms.MESSAGE_SIZE);
@@ -1282,7 +1282,7 @@ public class PduPersister {
 
         long date = sendReq.getDate();
         if (date != -1) {
-            values.put(Mms.DATE_SENT, date); /* DATE->DATE_SENT */
+            values.put(Mms.DATE, date);
         }
 
         int deliveryReport = sendReq.getDeliveryReport();
