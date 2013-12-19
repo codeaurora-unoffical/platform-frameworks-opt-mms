@@ -869,10 +869,10 @@ public class PduComposer {
 
         // content-type parameter: start
         PduBody body;
-        if (type == PduHeaders.MESSAGE_TYPE_SEND_REQ) {
-            body = ((SendReq) mPdu).getBody();
-        } else {
+        if (type == PduHeaders.MESSAGE_TYPE_RETRIEVE_CONF) {
             body = ((RetrieveConf) mPdu).getBody();
+        } else {
+            body = ((SendReq) mPdu).getBody();
         }
         if (null == body || body.getPartsNum() == 0) {
             // empty message
