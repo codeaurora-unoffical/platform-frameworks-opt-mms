@@ -48,6 +48,7 @@ public class ContentType {
     public static final String AUDIO_QCELP       = "audio/qcelp";
     public static final String AUDIO_EVRC        = "audio/evrc";
     public static final String AUDIO_AMR         = "audio/amr";
+    public static final String AUDIO_AMR_WB      = "audio/amr-wb";
     public static final String AUDIO_IMELODY     = "audio/imelody";
     public static final String AUDIO_MID         = "audio/mid";
     public static final String AUDIO_MIDI        = "audio/midi";
@@ -103,6 +104,7 @@ public class ContentType {
         sSupportedContentTypes.add(AUDIO_QCELP);
         sSupportedContentTypes.add(AUDIO_EVRC);
         sSupportedContentTypes.add(AUDIO_AMR);
+        sSupportedContentTypes.add(AUDIO_AMR_WB);
         sSupportedContentTypes.add(AUDIO_IMELODY);
         sSupportedContentTypes.add(AUDIO_MID);
         sSupportedContentTypes.add(AUDIO_MIDI);
@@ -147,6 +149,7 @@ public class ContentType {
         sSupportedAudioTypes.add(AUDIO_QCELP);
         sSupportedAudioTypes.add(AUDIO_EVRC);
         sSupportedAudioTypes.add(AUDIO_AMR);
+        sSupportedAudioTypes.add(AUDIO_AMR_WB);
         sSupportedAudioTypes.add(AUDIO_IMELODY);
         sSupportedAudioTypes.add(AUDIO_MID);
         sSupportedAudioTypes.add(AUDIO_MIDI);
